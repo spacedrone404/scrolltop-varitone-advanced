@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Variable color & smooth scrollTop button</title>
+</head>
+<style>
+  html {
+    scroll-behavior: smooth;
+
+  }
+
+  .section1 {
+    height: 400px;
+    color: #ffffff;
+  }
+
+  .section2 {
+    height: 200px;
+    color: #ffffff;
+  }
+
+  .section3 {
+    height: 600px;
+
+  }
+
+  .section4 {
+    height: 800px;
+  }
+
+  .section5 {
+    height: 1000px;
+    color: #ffffff;
+  }
+
+  .blue {
+    background-color: #180bcc;
+  }
+
+  .light {
+    background-color: #ffffff;
+  }
+
+
+  #scrollTop {
+    position: fixed;
+    bottom: 200px;
+    right: 80px;
+    z-index: 10000;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 22px;
+    font-weight: 700;
+    width: 54px;
+    height: 54px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 1.8s ease-in-out, scale 0.4s ease-in-out;
+    scale: 100%;
+    filter: brightness(var(--brightness, 1)) saturate(100%) invert(var(--invert, 13%)) sepia(90%) saturate(7299%) hue-rotate(var(--hue-rotate, 0deg)) brightness(90%) contrast(100%);
+  }
+
+  #scrollTop:hover {
+    border-radius: 50%;
+    transition: all 1.8s ease-in-out, scale 0.4s ease-in-out;
+    scale: 108%;
+  }
+
+  #scrollTop.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  #scrollTop.hide {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  #top {
+    font-size: 40px;
+    color: #ff0000;
+    font-weight: 900;
+  }
+
+  .subtext {
+    color: #0898ff;
+    font-weight: 900;
+    font-size: 12px;
+    margin-bottom: 10px;
+
+  }
+</style>
+
+<body>
+  <div id="top">TOP OF THE PAGE</div>
+  <div class="subtext">Super scroll-to-top button with smooth opacity fading & color transitioning upon intersecting
+    dark areas</div>
+  <button id="scrollTop" onclick="topFunction()" title="Back to top Menu">
+    <a href="#top">
+      <img src="scrollup.svg" alt="Back to top Menu" />
+    </a>
+  </button>
+
+  <section class="section section1 blue" id="dark">
+  </section>
+
+  <section class="section section2 light" id="light">
+  </section>
+
+  <section class="section section3 blue" id="dark">
+  </section>
+
+  <section class="section section4 light">
+  </section>
+
+  <section class="section section5 blue" id="dark">
+  </section>
+
+  <section class="section section4 light">
+  </section>
+
+  <section class="section section5 blue" id="dark">
+  </section>
+
+  <script>
+    let lastScrollTop = 0;
+    let scrollTopBtn = document.getElementById("scrollTop");
+
+    // Filter transition values
+    const redFilter = { hueRotate: 0, invert: 13 }; // Red
+    const blueFilter = { hueRotate: 216, invert: 21 }; // Blue
+    let currentFilter = { ...redFilter }; // Start with red filter
+
+    // Function to update CSS variables for smooth transition
+    function updateFilter(hueRotate, invert) {
+      scrollTopBtn.style.setProperty("--hue-rotate", `${hueRotate}deg`);
+      scrollTopBtn.style.setProperty("--invert", `${invert}%`);
+    }
+
+    // Function to smoothly interpolate filter values
+    function smoothTransition(targetFilter, duration = 100) {
+      const startHue = currentFilter.hueRotate;
+      const startInvert = currentFilter.invert;
+      const endHue = targetFilter.hueRotate;
+      const endInvert = targetFilter.invert;
+
+      let startTime = null;
+
+      function animate(time) {
+        if (!startTime) startTime = time;
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Interpolate between start and end values
+        const currentHue = startHue + (endHue - startHue) * progress;
+        const currentInvert = startInvert + (endInvert - startInvert) * progress;
+
+        updateFilter(currentHue, currentInvert);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          currentFilter = { hueRotate: endHue, invert: endInvert }; // Update current filter
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function scrollFunction() {
+      const currentScroll = window.scrollY || document.documentElement.scrollTop;
+
+      if (currentScroll > 512) {
+        if (!scrollTopBtn.classList.contains("show")) {
+          scrollTopBtn.classList.remove("hide");
+          scrollTopBtn.classList.add("show");
+        }
+      } else if (currentScroll < lastScrollTop) {
+        if (scrollTopBtn.classList.contains("show")) {
+          scrollTopBtn.classList.remove("show");
+          scrollTopBtn.classList.add("hide");
+        }
+      }
+      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+    }
+
+    // Detection of intersection with dark id divs
+    function findSection(scrollTopPositionX, scrollTopPositionY) {
+      const findElem = document.elementsFromPoint(scrollTopPositionX, scrollTopPositionY);
+      if (findElem.some(item => item.id === "dark")) {
+        if (currentFilter.hueRotate !== redFilter.hueRotate) {
+          smoothTransition(redFilter);
+        }
+      } else {
+        if (currentFilter.hueRotate !== blueFilter.hueRotate) {
+          smoothTransition(blueFilter);
+        }
+      }
+    }
+
+    // Scroll listener for button visibility and color
+    window.addEventListener("scroll", () => {
+      const scrollTopPositionX = scrollTopBtn.getBoundingClientRect().x;
+      const scrollTopPositionY = scrollTopBtn.getBoundingClientRect().y;
+      findSection(scrollTopPositionX, scrollTopPositionY);
+    });
+
+    window.onscroll = scrollFunction;
+
+    // Initial setup for filter state
+    updateFilter(currentFilter.hueRotate, currentFilter.invert);
+
+
+
+  </script>
+
+</body>
+
+</html>
